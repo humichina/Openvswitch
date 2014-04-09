@@ -356,8 +356,8 @@ void ovs_vport_writespeed(struct vport *vport, struct sk_buff *skb)
 
     if (nh->id < vport->link_speed) {
         //static inline void csum_replace2(__sum16 *sum, __be16 from, __be16 to);
-        csum_replace2(&nh->check, vport->link_speed, nh->id);
-        vport->link_speed = nh->id;
+        csum_replace2(&nh->check, nh->id, vport->link_speed);
+        nh->id = vport->link_speed;
     }
 }
 
