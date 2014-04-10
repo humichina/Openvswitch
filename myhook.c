@@ -16,12 +16,48 @@
 #include <linux/netfilter_ipv4.h>
 #include <linux/netfilter_ipv4/ip_tables.h>
 #include <linux/slab.h>
+#include <linux/types.h>
+#include <linux/in.h>
+#include <linux/ip.h>
+#include <linux/netlink.h>
+#include <linux/spinlock.h>
+#include <asm/semaphore.h>
+#include <net/sock.h>
+
+#ifndef __IMP2_H__
+#define __IMP2_H__
+
+#define IMP2_U_PID   0
+#define IMP2_K_MSG   1
+#define IMP2_CLOSE   2
+
+#define NL_IMP2      31
+
+struct packet_info
+{
+    __u32 src;
+    __u32 dest;
+    __u16 rate;
+};
+
+#endif
+
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("MI HU");
 MODULE_DESCRIPTION("My hook to modify ACK");
 
 #define MAXLEN 16
+
+DECLARE_MUTEX(receive_sem);
+
+static struct sock *nlfd;
+
+struct
+{
+    __u32 pid;
+    rwlock_t lock;
+}user_proc;
 
 struct spd {
     __u32 sip;
@@ -31,6 +67,76 @@ struct spd {
 struct spd *spd_buff;
 
 spd_buff = (struct spd *)kmalloc( sizeof(struct spd)*MAXLEN, GFP_KERNEL);
+
+static void kernel_receive(struct sock *sk, int len)
+{
+    do
+    {
+        struct sk_buff *skb;
+        if(down_trylock(&receive_sem))
+            return;
+
+        while((skb = skb_dequeue(&sk->receive_queue)) != NULL) {
+            struct nlmsghdr *nlh = NULL;
+
+            if(skb->len >= sizeof(struct nlmsghdr)) {
+                nlh = (struct nlmsghdr *)skb->data;
+                if((nlh->nlmsg_len >= sizeof(struct nlmsghdr)) && (skb->len >= nlh->nlmsg_len)) {
+                    if(nlh->nlmsg_type == IMP2_U_PID) {
+                        write_lock_bh(&user_proc.pid);
+                        user_proc.pid = nlh->nlmsg_pid;
+                        write_unlock_bh(&user_proc.pid);
+                    }
+                    else if(nlh->nlmsg_type == IMP2_CLOSE) {
+                        write_lock_bh(&user_proc.pid);
+                        if(nlh->nlmsg_pid == user_proc.pid)
+                            user_proc.pid = 0;
+                        write_unlock_bh(&user_proc.pid);
+                    }
+                }
+	      }
+          kfree_skb(skb);
+        }
+        up(&receive_sem);
+    }while(nlfd && nlfd->receive_queue.qlen);
+}
+
+static int send_to_user(struct packet_info *info)
+{
+    int ret;
+    int size;
+    unsigned char *old_tail;
+    struct sk_buff *skb;
+    struct nlmsghdr *nlh;
+    struct packet_info *packet;
+
+    size = NLMSG_SPACE(sizeof(*info));
+
+    skb = alloc_skb(size, GFP_ATOMIC);
+    old_tail = skb->tail;
+
+    nlh = NLMSG_PUT(skb, 0, 0, IMP2_K_MSG, size-sizeof(*nlh));
+    packet = NLMSG_DATA(nlh);
+    memset(packet, 0, sizeof(struct packet_info));
+
+    packet->src = info->src;
+    packet->dest = info->dest;
+    packet->rate = info->rate;
+
+    nlh->nlmsg_len = skb->tail - old_tail;
+    NETLINK_CB(skb).dst_groups = 0;
+
+    read_lock_bh(&user_proc.lock);
+    ret = netlink_unicast(nlfd, skb, user_proc.pid, MSG_DONTWAIT);
+    read_unlock_bh(&user_proc.lock);
+
+    return ret;
+
+    nlmsg_failure:
+        if(skb)
+            kfree_skb(skb);
+        return -1;
+}
 
 void update_speed(struct iphdr * iph)
 {
@@ -96,9 +202,17 @@ static unsigned int hook_func1(unsigned int hooknum,
 			if (tcph->ack) {
                 //It is an ACK.
                 //Retrieve the id(L3), s_ip and d_ip. Send it to the user space to limite rate.
-                __u16: iph->id;
-                __be32: iph->daddr;
-                __be32: iph->saddr;
+                struct packet_info info;
+                read_lock_bh(&user_proc.lock);
+                if(user_proc.pid != 0) {
+                    read_unlock_bh(&user_proc.lock);
+                    info.rate = iph->id;
+                    info.dest = iph->daddr;
+                    info.src = iph->saddr;
+                    send_to_user(&info);
+                }
+                else
+                    read_unlock_bh(&user_proc.lock);
 			}
 			else {
                 //It isn't an ACK.
@@ -164,6 +278,14 @@ static struct nf_hook_ops nfho2={
 
 static int __init myhook_init(void)
 {
+    rwlock_init(&user_proc.lock);
+
+    nlfd = netlink_kernel_create(NL_IMP2, kernel_receive);
+    if(!nlfd) {
+      printk("can not create a netlink socket\n");
+      return -1;
+    }
+
 	nf_register_hook(&nfho1);//将用户自己定义的钩子注册到内核中
 	nf_register_hook(&nfho2);
 	return 0;
@@ -171,6 +293,10 @@ static int __init myhook_init(void)
 
 static void __exit myhook_fini(void)
 {
+    if(nlfd) {
+      sock_release(nlfd->socket);
+    }
+
 	nf_unregister_hook(&nfho1);//将用户自己定义的钩子从内核中删除
 	nf_unregister_hook(&nfho2);
 }
