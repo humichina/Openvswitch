@@ -14,7 +14,6 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <linux/types.h>
-#include <sys/socket.h>
 #include <asm/types.h>
 #include <linux/netlink.h>
 #include <signal.h>
@@ -39,37 +38,37 @@ struct packet_info
 
 struct msg_to_kernel
 {
-  struct nlmsghdr hdr;
+    struct nlmsghdr hdr;
 };
 
 struct u_packet_info
 {
-  struct nlmsghdr hdr;
-  struct packet_info ack_info;
+    struct nlmsghdr hdr;
+    struct packet_info ack_info;
 };
 
 static int skfd;
 
 static void sig_int(int signo)
 {
-  struct sockaddr_nl kpeer;
-  struct msg_to_kernel message;
+    struct sockaddr_nl kpeer;
+    struct msg_to_kernel message;
 
-  memset(&kpeer, 0, sizeof(kpeer));
-  kpeer.nl_family = AF_NETLINK;
-  kpeer.nl_pid    = 0;
-  kpeer.nl_groups = 0;
+    memset(&kpeer, 0, sizeof(kpeer));
+    kpeer.nl_family = AF_NETLINK;
+    kpeer.nl_pid    = 0;
+    kpeer.nl_groups = 0;
 
-  memset(&message, 0, sizeof(message));
-  message.hdr.nlmsg_len = NLMSG_LENGTH(0);
-  message.hdr.nlmsg_flags = 0;
-  message.hdr.nlmsg_type = IMP2_CLOSE;
-  message.hdr.nlmsg_pid = getpid();
+    memset(&message, 0, sizeof(message));
+    message.hdr.nlmsg_len = NLMSG_LENGTH(0);
+    message.hdr.nlmsg_flags = 0;
+    message.hdr.nlmsg_type = IMP2_CLOSE;
+    message.hdr.nlmsg_pid = getpid();
 
-  sendto(skfd, &message, message.hdr.nlmsg_len, 0, (struct sockaddr *)(&kpeer), sizeof(kpeer));
+    sendto(skfd, &message, message.hdr.nlmsg_len, 0, (struct sockaddr *)(&kpeer), sizeof(kpeer));
 
-  close(skfd);
-  exit(0);
+    close(skfd);
+    exit(0);
 }
 
 int main(void)
@@ -123,9 +122,11 @@ int main(void)
         addr.s_addr = info.ack_info.src;
         printf("src: %s, ", inet_ntoa(addr));
         addr.s_addr = info.ack_info.dest;
-        printf("dest: %s\n", inet_ntoa(addr));
-        info.ack_info.rate;
+        printf("dest: %s,", inet_ntoa(addr));
+        printf("rate: %d\n",info.ack_info.rate);
     }
+
+    //close(skfd);
 
     return 0;
 }

@@ -21,7 +21,7 @@
 #include <linux/ip.h>
 #include <linux/netlink.h>
 #include <linux/spinlock.h>
-#include <asm/semaphore.h>
+#include <linux/mutex.h>
 #include <net/sock.h>
 
 #ifndef __IMP2_H__
@@ -47,9 +47,9 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("MI HU");
 MODULE_DESCRIPTION("My hook to modify ACK");
 
-#define MAXLEN 16
+#define MAX_LEN 16
 
-DECLARE_MUTEX(receive_sem);
+struct mutex receive_sem;
 
 static struct sock *nlfd;
 
@@ -59,54 +59,48 @@ struct
     rwlock_t lock;
 }user_proc;
 
-struct spd {
+typedef struct {
     __u32 sip;
     __u32 dip;
     __u16 rate;
-};
-struct spd *spd_buff;
+}spd;
+typedef spd * spd_p;
 
-spd_buff = (struct spd *)kmalloc( sizeof(struct spd)*MAXLEN, GFP_KERNEL);
+spd_p spd_buff;
 
 static void kernel_receive(struct sock *sk, int len)
 {
-    do
-    {
-        struct sk_buff *skb;
-        if(down_trylock(&receive_sem))
-            return;
+    struct sk_buff *skb;
 
-        while((skb = skb_dequeue(&sk->receive_queue)) != NULL) {
-            struct nlmsghdr *nlh = NULL;
+    while((skb = skb_dequeue(&sk->sk_receive_queue)) != NULL) {
+        struct nlmsghdr *nlh = NULL;
 
-            if(skb->len >= sizeof(struct nlmsghdr)) {
-                nlh = (struct nlmsghdr *)skb->data;
-                if((nlh->nlmsg_len >= sizeof(struct nlmsghdr)) && (skb->len >= nlh->nlmsg_len)) {
-                    if(nlh->nlmsg_type == IMP2_U_PID) {
-                        write_lock_bh(&user_proc.pid);
-                        user_proc.pid = nlh->nlmsg_pid;
-                        write_unlock_bh(&user_proc.pid);
-                    }
-                    else if(nlh->nlmsg_type == IMP2_CLOSE) {
-                        write_lock_bh(&user_proc.pid);
-                        if(nlh->nlmsg_pid == user_proc.pid)
-                            user_proc.pid = 0;
-                        write_unlock_bh(&user_proc.pid);
-                    }
+        if(skb->len >= sizeof(struct nlmsghdr)) {
+            nlh = (struct nlmsghdr *)skb->data;
+            if((nlh->nlmsg_len >= sizeof(struct nlmsghdr)) && (skb->len >= nlh->nlmsg_len)) {
+                if(nlh->nlmsg_type == IMP2_U_PID) {
+                    write_lock_bh(&user_proc.lock);
+                    user_proc.pid = nlh->nlmsg_pid;
+                    write_unlock_bh(&user_proc.lock);
                 }
-	      }
-          kfree_skb(skb);
+                else if(nlh->nlmsg_type == IMP2_CLOSE) {
+                    write_lock_bh(&user_proc.lock);
+                    if(nlh->nlmsg_pid == user_proc.pid)
+                        user_proc.pid = 0;
+                    write_unlock_bh(&user_proc.lock);
+                }
+            }
         }
-        up(&receive_sem);
-    }while(nlfd && nlfd->receive_queue.qlen);
+        kfree_skb(skb);
+    }
 }
 
 static int send_to_user(struct packet_info *info)
 {
     int ret;
     int size;
-    unsigned char *old_tail;
     struct sk_buff *skb;
+    sk_buff_data_t old_tail;
     struct nlmsghdr *nlh;
     struct packet_info *packet;
 
@@ -124,7 +118,8 @@ static int send_to_user(struct packet_info *info)
     packet->rate = info->rate;
 
     nlh->nlmsg_len = skb->tail - old_tail;
-    NETLINK_CB(skb).dst_groups = 0;
+    NETLINK_CB(skb).pid = 0;
+    NETLINK_CB(skb).dst_group = 0;
 
     read_lock_bh(&user_proc.lock);
     ret = netlink_unicast(nlfd, skb, user_proc.pid, MSG_DONTWAIT);
@@ -142,7 +137,7 @@ void update_speed(struct iphdr * iph)
 {
     //return the position the given ip and if none then return the last
     int i;
-    for(i=0; i < MAXLEN; i++) {
+    for(i=0; i < MAX_LEN; i++) {
         if (spd_buff[i].sip) {
             if ((spd_buff[i].sip==iph->saddr)&&(spd_buff[i].dip==iph->daddr)) {
                 spd_buff[i].rate = iph->id;
@@ -163,7 +158,7 @@ void update_speed(struct iphdr * iph)
 void update_ack_rate(struct iphdr * iph)
 {
     int i;
-    for(i=0; i < MAXLEN; i++) {
+    for(i=0; i < MAX_LEN; i++) {
         if (spd_buff[i].sip) {
             if ((spd_buff[i].sip==iph->saddr)&&(spd_buff[i].dip==iph->daddr)) {
                 //static inline void csum_replace2(__sum16 *sum, __be16 from, __be16 to);
@@ -191,7 +186,7 @@ static unsigned int hook_func1(unsigned int hooknum,
 	struct iphdr    * iph;
 	struct tcphdr   * tcph;
 	//unsigned char   * http_port = "\x00\x50";
-	char            * data;
+	//char            * data;
 
 	if (skb) {
 		iph = ip_hdr(skb);
@@ -235,7 +230,7 @@ static unsigned int hook_func2(unsigned int hooknum,
 	struct iphdr    * iph;
 	struct tcphdr   * tcph;
 	//unsigned char   * http_port = "\x00\x50"; //port 80
-	char            * data;
+	//char            * data;
 
 	if (skb) {
 		iph = ip_hdr(skb);
@@ -264,7 +259,7 @@ static struct nf_hook_ops nfho1={
 	.hook           = hook_func1,
 	.owner          = THIS_MODULE,
 	.pf             = PF_INET,
-	.hooknum        = NF_IP_LOCAL_IN,//路由后，进入本机的数据
+	.hooknum        = NF_INET_LOCAL_IN,//路由后，进入本机的数据
 	.priority       = NF_IP_PRI_FIRST,
 };
 
@@ -272,7 +267,7 @@ static struct nf_hook_ops nfho2={
 	.hook           = hook_func2,
 	.owner          = THIS_MODULE,
 	.pf             = PF_INET,
-	.hooknum        = NF_IP_LOCAL_OUT,//路由前，本机本地进程发出的数据
+	.hooknum        = NF_INET_LOCAL_OUT,//路由前，本机本地进程发出的数据
 	.priority       = NF_IP_PRI_FIRST,
 };
 
@@ -280,7 +275,10 @@ static int __init myhook_init(void)
 {
     rwlock_init(&user_proc.lock);
 
-    nlfd = netlink_kernel_create(NL_IMP2, kernel_receive);
+    spd_buff = (spd_p)kmalloc( sizeof(spd)*MAX_LEN, GFP_KERNEL);
+    memset(spd_buff, 0, sizeof(spd)*MAX_LEN);
+
+    nlfd = netlink_kernel_create(&init_net, NL_IMP2, 0, kernel_receive, NULL, THIS_MODULE);
     if(!nlfd) {
       printk("can not create a netlink socket\n");
       return -1;
@@ -294,11 +292,13 @@ static int __init myhook_init(void)
 static void __exit myhook_fini(void)
 {
     if(nlfd) {
-      sock_release(nlfd->socket);
+      sock_release(nlfd->sk_socket);
     }
 
+    kfree(spd_buff);
 	nf_unregister_hook(&nfho1);//将用户自己定义的钩子从内核中删除
 	nf_unregister_hook(&nfho2);
+
 }
 
 module_init(myhook_init);

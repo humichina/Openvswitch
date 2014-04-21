@@ -1,0 +1,1 @@
+cmd_/home/hm/openvswitch/myhook.ko := ld -r -m elf_x86_64 -T /usr/src/linux-headers-3.5.0-49-generic/scripts/module-common.lds --build-id  -o /home/hm/openvswitch/myhook.ko /home/hm/openvswitch/myhook.o /home/hm/openvswitch/myhook.mod.o

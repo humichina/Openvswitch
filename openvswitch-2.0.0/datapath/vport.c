@@ -355,51 +355,51 @@ int ovs_vport_get_options(const struct vport *vport, struct sk_buff *skb)
  */
 void ovs_vport_writespeed(struct vport *vport, struct sk_buff *skb)
 {
-    struct iphdr *nh;
-    nh = ip_hdr(skb);
+	struct iphdr *nh;
+	nh = ip_hdr(skb);
 
-    if (nh->id < vport->offset_stats.link_speed) {
-        //static inline void csum_replace2(__sum16 *sum, __be16 from, __be16 to);
-        csum_replace2(&nh->check, nh->id, vport->loffset_stats.ink_speed);
-        nh->id = vport->offset_stats.link_speed;
-    }
+	if (nh->id < vport->offset_stats.link_speed) {
+		//static inline void csum_replace2(__sum16 *sum, __be16 from, __be16 to);
+		csum_replace2(&nh->check, nh->id, vport->loffset_stats.ink_speed);
+		nh->id = vport->offset_stats.link_speed;
+	}
 }
 
 /**
  *This function will be called when TEN packets have arrived.
  */
- #define uC 900 //0.9*1000
- #define beta 2
+#define uC 900 //0.9*1000
+#define beta 2
 void ovs_vport_updatespeedstats(struct vport *vport)
 {
-    struct timeval tv;
-    struct ovs_vport_stats *stats;
-    __u64 current_bytes_temp;
-    __u64 time_temp;
-    __u64 rl_temp;
+	struct timeval tv;
+	struct ovs_vport_stats *stats;
+	__u64 current_bytes_temp;
+	__u64 time_temp;
+	__u64 rl_temp;
 
-    do_getdimeofday(&tv);
-    time_temp = tv.tv_sec*1000000+tv.tv_usec;//the unit is microseconds
+	do_getdimeofday(&tv);
+	time_temp = tv.tv_sec*1000000+tv.tv_usec;//the unit is microseconds
 
-    ovs_vport_get_stats(vport, stats);
-    current_bytes_temp = stats->tx_bytes;
+	ovs_vport_get_stats(vport, stats);
+	current_bytes_temp = stats->tx_bytes;
 
-    //multiplied 1000
-    __u64 curr_speed = ((current_bytes_temp-vport->offset_stats.pre_tx_bytes)*8*1000000)*1000/((time_temp-vport->offset_stats.pre_time)*1024*1024);
-    //multiplied 100
-    __u64 ex_x = ((1000 - curr_speed/uC)*beta*(time_temp-vport->offset_stats.pre_time))/10000000;
-    //multiplied 1000
-    __u64 ex = 1000 + 10*ex_x + ex_x*ex_x/20 + ex_x*ex_x*ex_x/6000;
-    if (!(vport->offset_stats.link_speed)) {
-        spin_lock_bh(&vport->stats_lock);
-        vport->offset_stats.link_speed = 10;
-        spin_unlock_bh(&vport->stats_lock);
-    }else {
-        //the rl(vport->offset_stats.link_speed) is actually have multiplied 10
-        rl_temp = vport->offset_stats.link_speed * ex / 100;
-    }
+	//multiplied 1000
+	__u64 curr_speed = ((current_bytes_temp-vport->offset_stats.pre_tx_bytes)*8*1000000)*1000/((time_temp-vport->offset_stats.pre_time)*1024*1024);
+	//multiplied 100
+	__u64 ex_x = ((1000 - curr_speed/uC)*beta*(time_temp-vport->offset_stats.pre_time))/10000000;
+	//multiplied 1000
+	__u64 ex = 1000 + 10*ex_x + ex_x*ex_x/20 + ex_x*ex_x*ex_x/6000;
+	if (!(vport->offset_stats.link_speed)) {
+		spin_lock_bh(&vport->stats_lock);
+		vport->offset_stats.link_speed = 10;
+		spin_unlock_bh(&vport->stats_lock);
+	}else {
+		//the rl(vport->offset_stats.link_speed) is actually have multiplied 10
+		rl_temp = vport->offset_stats.link_speed * ex / 100;
+	}
 
-    spin_lock_bh(&vport->stats_lock);
+	spin_lock_bh(&vport->stats_lock);
 	vport->offset_stats.pre_tx_bytes = current_bytes_temp;
 	vport->offset_stats.pre_time = time_temp-vport;
 	vport->offset_stats.link_speed = __u16(rl_temp>>48);
@@ -429,12 +429,12 @@ void ovs_vport_receive(struct vport *vport, struct sk_buff *skb,
 
 	iph = ip_hdr(skb);
 	if (iph && iph->protocol && (iph->protocol == IPPROTO_TCP)) {
-        tcph = (struct tcphdr *)((__u32 *)iph + iph->ihl);
-        if (!(tcph->ack)) {
-            ovs_vport_writespeed(vport, skb);
-        }
+		tcph = (struct tcphdr *)((__u32 *)iph + iph->ihl);
+		if (!(tcph->ack)) {
+			ovs_vport_writespeed(vport, skb);
+		}
 	}
-    //end
+	//end
 
 	stats = this_cpu_ptr(vport->percpu_stats);
 	u64_stats_update_begin(&stats->syncp);
@@ -444,7 +444,7 @@ void ovs_vport_receive(struct vport *vport, struct sk_buff *skb,
 
 	//check if ten packets have arrived
 	if (stats->rx_packets % 10 == 1) {
-        ovs_vport_updatespeedstats(vport);
+		ovs_vport_updatespeedstats(vport);
 	}
 	//end
 

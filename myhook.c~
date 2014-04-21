@@ -21,7 +21,7 @@
 #include <linux/ip.h>
 #include <linux/netlink.h>
 #include <linux/spinlock.h>
-#include <asm/semaphore.h>
+#include <linux/mutex.h>
 #include <net/sock.h>
 
 #ifndef __IMP2_H__
@@ -49,7 +49,7 @@ MODULE_DESCRIPTION("My hook to modify ACK");
 
 #define MAXLEN 16
 
-DECLARE_MUTEX(receive_sem);
+struct mutex receive_sem;
 
 static struct sock *nlfd;
 
@@ -73,7 +73,7 @@ static void kernel_receive(struct sock *sk, int len)
     do
     {
         struct sk_buff *skb;
-        if(down_trylock(&receive_sem))
+        if(mutex_trylock(&receive_sem))
             return;
 
         while((skb = skb_dequeue(&sk->receive_queue)) != NULL) {
@@ -97,7 +97,7 @@ static void kernel_receive(struct sock *sk, int len)
 	      }
           kfree_skb(skb);
         }
-        up(&receive_sem);
+        mutex_unlock(&receive_sem);
     }while(nlfd && nlfd->receive_queue.qlen);
 }
 
@@ -294,7 +294,7 @@ static int __init myhook_init(void)
 static void __exit myhook_fini(void)
 {
     if(nlfd) {
-      sock_release(nlfd->socket);
+      sock_release(nlfd->sk_socket);
     }
 
 	nf_unregister_hook(&nfho1);//将用户自己定义的钩子从内核中删除
