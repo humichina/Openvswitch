@@ -1,0 +1,18 @@
+#!/bin/sh
+
+ip route add 10.0.0.5 dev $1-eth5 via 10.0.0.1 realm 2
+ip route add 10.0.0.6 dev $1-eth5 via 10.0.0.1 realm 3
+ip route add 10.0.0.7 dev $1-eth5 via 10.0.0.1 realm 4
+ip route add 10.0.0.8 dev $1-eth5 via 10.0.0.1 realm 5
+ip route add 10.0.0.5 dev $1-eth5 via 10.0.0.1 realm 6
+ip route add 10.0.0.6 dev $1-eth5 via 10.0.0.1 realm 7
+ip route add 10.0.0.7 dev $1-eth5 via 10.0.0.1 realm 8
+ip route add 10.0.0.8 dev $1-eth5 via 10.0.0.1 realm 9
+ip route add 10.0.0.5 dev $1-eth5 via 10.0.0.1 realm 10
+ip route add 10.0.0.6 dev $1-eth5 via 10.0.0.1 realm 11
+ip route add 10.0.0.7 dev $1-eth5 via 10.0.0.1 realm 12
+ip route add 10.0.0.8 dev $1-eth5 via 10.0.0.1 realm 13
+ip route add 10.0.0.5 dev $1-eth5 via 10.0.0.1 realm 14
+ip route add 10.0.0.6 dev $1-eth5 via 10.0.0.1 realm 15
+ip route add 10.0.0.7 dev $1-eth5 via 10.0.0.1 realm 16
+ip route add 10.0.0.8 dev $1-eth5 via 10.0.0.1 realm 17

@@ -34,6 +34,7 @@
 #include <linux/ip.h>
 #include <linux/tcp.h>
 #include <linux/time.h>
+#include <linux/openvswitch.h>
 
 #include "datapath.h"
 #include "vport.h"
@@ -358,11 +359,15 @@ void ovs_vport_writespeed(struct vport *vport, struct sk_buff *skb)
 	struct iphdr *nh;
 	nh = ip_hdr(skb);
 
-	if (nh->id < vport->offset_stats.link_speed) {
+	csum_replace2(&nh->check, nh->id, 12);
+	nh->id = 12;
+	printk(KERN_INFO "writespeed successful!");
+
+	/* if (nh->id < vport->offset_stats.link_speed) {
 		//static inline void csum_replace2(__sum16 *sum, __be16 from, __be16 to);
-		csum_replace2(&nh->check, nh->id, vport->loffset_stats.ink_speed);
+		csum_replace2(&nh->check, nh->id, vport->offset_stats.link_speed);
 		nh->id = vport->offset_stats.link_speed;
-	}
+	} */
 }
 
 /**
@@ -378,7 +383,7 @@ void ovs_vport_updatespeedstats(struct vport *vport)
 	__u64 time_temp;
 	__u64 rl_temp;
 
-	do_getdimeofday(&tv);
+	do_gettimeofday(&tv);
 	time_temp = tv.tv_sec*1000000+tv.tv_usec;//the unit is microseconds
 
 	ovs_vport_get_stats(vport, stats);
@@ -401,8 +406,9 @@ void ovs_vport_updatespeedstats(struct vport *vport)
 
 	spin_lock_bh(&vport->stats_lock);
 	vport->offset_stats.pre_tx_bytes = current_bytes_temp;
-	vport->offset_stats.pre_time = time_temp-vport;
-	vport->offset_stats.link_speed = __u16(rl_temp>>48);
+	vport->offset_stats.pre_time = time_temp;
+	//rl_temp = rl_temp>>48;
+	vport->offset_stats.link_speed = * (__u16 *)(&rl_temp);
 	spin_unlock_bh(&vport->stats_lock);
 }
 //This is the end of code
@@ -430,9 +436,12 @@ void ovs_vport_receive(struct vport *vport, struct sk_buff *skb,
 	iph = ip_hdr(skb);
 	if (iph && iph->protocol && (iph->protocol == IPPROTO_TCP)) {
 		tcph = (struct tcphdr *)((__u32 *)iph + iph->ihl);
-		if (!(tcph->ack)) {
+		if (!(tcph->ack && (tcph->psh == 0) && ((iph->daddr>>24)<(iph->saddr>>24)))) {
 			ovs_vport_writespeed(vport, skb);
 		}
+	}
+	if (iph && iph->protocol && (iph->protocol == IPPROTO_UDP)) {
+		ovs_vport_writespeed(vport, skb);
 	}
 	//end
 
@@ -444,7 +453,7 @@ void ovs_vport_receive(struct vport *vport, struct sk_buff *skb,
 
 	//check if ten packets have arrived
 	if (stats->rx_packets % 10 == 1) {
-        	ovs_vport_updatespeedstats(vport);
+		ovs_vport_updatespeedstats(vport);
 	}
 	//end
 

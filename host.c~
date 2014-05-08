@@ -293,8 +293,8 @@ int main()
         if (Bi[d][s] > vi[d][s]) {
 			vi[d][s] = Bi[d][s];
         }
-		if (vi[d][s] >900) {
-			vi[d][s] =900;
+		if (vi[d][s] >1000) {
+			vi[d][s] =999.99;
 		}
 		addr.s_addr = info.ack_info.src;
         printf("src: %s,", inet_ntoa(addr));

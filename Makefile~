@@ -1,4 +1,4 @@
-obj-m:=myhook.o
+obj-m := testnetlink.o
 	KERNELBUILD := /lib/modules/`uname -r`/build
 default:
 	@echo "BUILD kmod"

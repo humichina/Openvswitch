@@ -412,7 +412,7 @@ configure:5127: result: no
 configure:5211: checking for library containing pow
 configure:5242: gcc -o conftest -g -O2   conftest.c  >&5
 conftest.c:33:6: warning: conflicting types for built-in function 'pow' [enabled by default]
-/tmp/ccb0p56M.o: In function `main':
+/tmp/ccMlmJQw.o: In function `main':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:37: undefined reference to `pow'
 collect2: ld returned 1 exit status
 configure:5242: $? = 1
@@ -463,7 +463,7 @@ configure:5242: $? = 0
 configure:5259: result: -lm
 configure:5267: checking for library containing clock_gettime
 configure:5298: gcc -o conftest -g -O2   conftest.c -lm  >&5
-/tmp/ccdHrw9W.o: In function `main':
+/tmp/ccWDq8KF.o: In function `main':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:37: undefined reference to `clock_gettime'
 collect2: ld returned 1 exit status
 configure:5298: $? = 1
@@ -517,7 +517,7 @@ configure:5354: $? = 0
 configure:5371: result: none required
 configure:5379: checking for library containing pthread_sigmask
 configure:5410: gcc -o conftest -g -O2   conftest.c -lrt -lm  >&5
-/tmp/ccL2Zkbe.o: In function `main':
+/tmp/ccrtM00M.o: In function `main':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:37: undefined reference to `pthread_sigmask'
 collect2: ld returned 1 exit status
 configure:5410: $? = 1
@@ -1642,15 +1642,15 @@ configure:6825: $? = 0
 configure:6833: result: yes
 configure:6840: checking value of __atomic_always_lock_free(1)
 configure:6845: gcc -o conftest -g -O2   conftest.c -lpthread -lrt -lm  >&5
-/tmp/ccVtP7mc.o: In function `main':
+/tmp/ccsG0WBV.o: In function `main':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:60: undefined reference to `__atomic_always_lock_free'
-/tmp/ccVtP7mc.o: In function `ulongval':
+/tmp/ccsG0WBV.o: In function `ulongval':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:50: undefined reference to `__atomic_always_lock_free'
-/tmp/ccVtP7mc.o: In function `main':
+/tmp/ccsG0WBV.o: In function `main':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:70: undefined reference to `__atomic_always_lock_free'
-/tmp/ccVtP7mc.o: In function `longval':
+/tmp/ccsG0WBV.o: In function `longval':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:49: undefined reference to `__atomic_always_lock_free'
-/tmp/ccVtP7mc.o: In function `main':
+/tmp/ccsG0WBV.o: In function `main':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:63: undefined reference to `__atomic_always_lock_free'
 collect2: ld returned 1 exit status
 configure:6845: $? = 1
@@ -1739,15 +1739,15 @@ configure: failed program was:
 configure:6852: result: unsupported
 configure:6861: checking value of __atomic_always_lock_free(2)
 configure:6866: gcc -o conftest -g -O2   conftest.c -lpthread -lrt -lm  >&5
-/tmp/ccDLpWHg.o: In function `main':
+/tmp/ccDO57Y2.o: In function `main':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:61: undefined reference to `__atomic_always_lock_free'
-/tmp/ccDLpWHg.o: In function `ulongval':
+/tmp/ccDO57Y2.o: In function `ulongval':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:51: undefined reference to `__atomic_always_lock_free'
-/tmp/ccDLpWHg.o: In function `main':
+/tmp/ccDO57Y2.o: In function `main':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:71: undefined reference to `__atomic_always_lock_free'
-/tmp/ccDLpWHg.o: In function `longval':
+/tmp/ccDO57Y2.o: In function `longval':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:50: undefined reference to `__atomic_always_lock_free'
-/tmp/ccDLpWHg.o: In function `main':
+/tmp/ccDO57Y2.o: In function `main':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:64: undefined reference to `__atomic_always_lock_free'
 collect2: ld returned 1 exit status
 configure:6866: $? = 1
@@ -1837,15 +1837,15 @@ configure: failed program was:
 configure:6873: result: unsupported
 configure:6882: checking value of __atomic_always_lock_free(4)
 configure:6887: gcc -o conftest -g -O2   conftest.c -lpthread -lrt -lm  >&5
-/tmp/ccE4cb4n.o: In function `main':
+/tmp/ccxyVQjb.o: In function `main':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:62: undefined reference to `__atomic_always_lock_free'
-/tmp/ccE4cb4n.o: In function `ulongval':
+/tmp/ccxyVQjb.o: In function `ulongval':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:52: undefined reference to `__atomic_always_lock_free'
-/tmp/ccE4cb4n.o: In function `main':
+/tmp/ccxyVQjb.o: In function `main':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:72: undefined reference to `__atomic_always_lock_free'
-/tmp/ccE4cb4n.o: In function `longval':
+/tmp/ccxyVQjb.o: In function `longval':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:51: undefined reference to `__atomic_always_lock_free'
-/tmp/ccE4cb4n.o: In function `main':
+/tmp/ccxyVQjb.o: In function `main':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:65: undefined reference to `__atomic_always_lock_free'
 collect2: ld returned 1 exit status
 configure:6887: $? = 1
@@ -1936,15 +1936,15 @@ configure: failed program was:
 configure:6894: result: unsupported
 configure:6903: checking value of __atomic_always_lock_free(8)
 configure:6908: gcc -o conftest -g -O2   conftest.c -lpthread -lrt -lm  >&5
-/tmp/cc4vULCv.o: In function `main':
+/tmp/cc5vxs99.o: In function `main':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:63: undefined reference to `__atomic_always_lock_free'
-/tmp/cc4vULCv.o: In function `ulongval':
+/tmp/cc5vxs99.o: In function `ulongval':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:53: undefined reference to `__atomic_always_lock_free'
-/tmp/cc4vULCv.o: In function `main':
+/tmp/cc5vxs99.o: In function `main':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:73: undefined reference to `__atomic_always_lock_free'
-/tmp/cc4vULCv.o: In function `longval':
+/tmp/cc5vxs99.o: In function `longval':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:52: undefined reference to `__atomic_always_lock_free'
-/tmp/cc4vULCv.o: In function `main':
+/tmp/cc5vxs99.o: In function `main':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:66: undefined reference to `__atomic_always_lock_free'
 collect2: ld returned 1 exit status
 configure:6908: $? = 1
@@ -2040,7 +2040,7 @@ configure:6955: $? = 0
 configure:6972: result: none required
 configure:6990: checking for pthread_set_name_np
 configure:6990: gcc -o conftest -g -O2   conftest.c -lpthread -lrt -lm  >&5
-/tmp/ccWAG6YL.o: In function `main':
+/tmp/ccZnaLtn.o: In function `main':
 /home/hm/openvswitch/openvswitch-2.0.0/conftest.c:86: undefined reference to `pthread_set_name_np'
 collect2: ld returned 1 exit status
 configure:6990: $? = 1
